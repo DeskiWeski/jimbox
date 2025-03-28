@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Desk's Boxing Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Roboto+Condensed:wght@700&display=swap');
+        
+        :root {
+            --primary: #d90429;
+            --secondary: #2b2d42;
+            --highlight: #edf2f4;
+            --accent: #8d99ae;
+            --ring: #606c88;
+        }
+        
+        body {
+            font-family: 'Roboto Condensed', sans-serif;
+            background: linear-gradient(145deg, #2b2d42 0%, #606c88 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--highlight);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #game-container {
+            width: 100%;
+            max-width: 700px;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .game-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        .game-header h1 {
+            font-family: 'Anton', sans-serif;
+            font-size: 4rem;
+            margin: 0;
+            color: var(--primary);
+            text-shadow: 4px 4px 0 rgba(0,0,0,0.4), -2px -2px 0 var(--highlight);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        
+        .stats-container {
+            background: rgba(43, 45, 66, 0.85);
+            border: 4px solid var(--ring);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            backdrop-filter: blur(5px);
+        }
+        
+        .stat-box {
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 1.1rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-family: 'Anton', sans-serif;
+            color: var(--highlight);
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+        }
+        
+        #face-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 0 auto;
+            cursor: crosshair;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 10px solid var(--ring);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            background: #000;
+            transition: transform 0.1s ease;
+        }
+        
+        #face-container:active {
+            transform: scale(0.98);
+        }
+        
+        #face {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: filter 0.2s;
+        }
+        
+        .bruise {
+            position: absolute;
+            mix-blend-mode: multiply;
+            opacity: 0;
+            transition: opacity 0.5s ease, transform 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .health-bar {
+            height: 25px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            margin: 25px 0;
+            overflow: hidden;
+            border: 2px solid var(--accent);
+            position: relative;
+        }
+        
+        #health-progress {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--highlight) 100%);
+            transition: width 0.4s ease;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+        }
+        
+        .combo-meter {
+            position: absolute;
+            bottom: -60px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-family: 'Anton', sans-serif;
+            font-size: 2.2rem;
+            color: var(--primary);
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.4s ease;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+        }
+        
+        .combo-active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        #start-screen, #end-screen, #leaderboard-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(43, 45, 66, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+        
+        .screen-content {
+            max-width: 600px;
+            padding: 40px;
+            background: rgba(96, 108, 136, 0.2);
+            border-radius: 20px;
+            border: 4px solid var(--ring);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, var(--primary) 0%, #9b1d20 100%);
+            color: var(--highlight);
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.4rem;
+            font-family: 'Anton', sans-serif;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 15px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(2px);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary) 0%, #1f2235 100%);
+        }
+        
+        .punch-effect {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(217,4,41,0.5) 0%, transparent 70%);
+            opacity: 0;
+            pointer-events: none;
+            border-radius: 50%;
+        }
+        
+        @keyframes punch {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        
+        .hit-flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        
+        .ring-glow {
+            animation: ringPulse 1.5s infinite alternate;
+        }
+        
+        @keyframes ringPulse {
+            0% { box-shadow: 0 0 15px rgba(217,4,41,0.4); }
+            100% { box-shadow: 0 0 35px rgba(217,4,41,0.8); }
+        }
+        
+        #difficulty-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 25px 0;
+        }
+        
+        .difficulty-btn {
+            padding: 12px 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 30px;
+        }
+        
+        .selected-difficulty {
+            border: 3px solid var(--highlight);
+            box-shadow: 0 0 15px var(--primary);
+        }
+        #name-input {
+            margin: 25px 0;
+            padding: 12px 20px;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            border: 2px solid var(--accent);
+            background: rgba(255,255,255,0.95);
+            text-align: center;
+            width: 85%;
+            max-width: 350px;
+            font-family: 'Roboto Condensed', sans-serif;
+        }
+        
+        #leaderboard {
+            width: 90%;
+            max-width: 550px;
+            margin: 25px auto;
+            background: rgba(43, 45, 66, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            max-height: 350px;
+            overflow-y: auto;
+            border: 2px solid var(--ring);
+        }
+        
+        .leaderboard-entry {
+            display: grid;
+            grid-template-columns: 50px 1fr 100px 80px;
+            padding: 12px;
+            border-bottom: 1px solid rgba(141, 153, 174, 0.3);
+            align-items: center;
+            transition: background 0.3s;
+        }
+        
+        .leaderboard-entry:hover {
+            background: rgba(217,4,41,0.1);
+        }
+        
+        .leaderboard-rank {
+            font-family: 'Anton', sans-serif;
+            font-size: 1.3rem;
+            color: var(--primary);
+            text-align: center;
+        }
+        
+        .leaderboard-name {
+            text-align: left;
+            padding-left: 20px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .leaderboard-time {
+            font-family: monospace;
+            text-align: right;
+            font-size: 1.1rem;
+        }
+        
+        .leaderboard-difficulty {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--accent);
+        }
+        
+        .ring-ropes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .rope {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: var(--ring);
+            opacity: 0.7;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        
+        .rope:nth-child(1) { top: 20%; }
+        .rope:nth-child(2) { top: 40%; }
+        .rope:nth-child(3) { top: 60%; }
+    </style>
+</head>
+<body>
+    <div class="ring-ropes">
+        <div class="rope"></div>
+        <div class="rope"></div>
+        <div class="rope"></div>
+    </div>
+
+    <div id="start-screen">
+        <div class="screen-content">
+            <h1>Desk's Boxing Game</h1>
+            <p>Step into Desk's ring and throw some punches!<br>Click Desk's face to bruise him up!</p>
+            
+            <div id="difficulty-buttons">
+                <button class="btn difficulty-btn" data-difficulty="easy">Easy</button>
+                <button class="btn difficulty-btn selected-difficulty" data-difficulty="medium">Medium</button>
+                <button class="btn difficulty-btn" data-difficulty="hard">Hard</button>
+            </div>
+            
+            <button id="start-btn" class="btn">Start Brawl</button>
+            <button id="view-leaderboard-btn" class="btn btn-secondary">View Champs</button>
+        </div>
+    </div>
+
+    <div id="game-container" style="display: none;">
+        <div class="game-header">
+            <h1>DESK'S FIGHT</h1>
+        </div>
+        
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="stat-label">Round Time</div>
+                <div id="timer" class="stat-value">0.00s</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Punches</div>
+                <div id="score" class="stat-value">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Combo</div>
+                <div id="combo" class="stat-value">0x</div>
+            </div>
+        </div>
+        
+        <div class="health-bar">
+            <div id="health-progress"></div>
+        </div>
+        
+        <div id="face-container" class="ring-glow">
+            <img id="face" src="jim.png" alt="Desk's face">
+            <div class="punch-effect"></div>
+            <div class="hit-flash"></div>
+        </div>
+        
+        <div id="combo-text" class="combo-meter">COMBO!</div>
+        
+        <audio id="punch-sound" preload="auto"></audio>
+        <audio id="combo-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-game-success-alert-2039.mp3" preload="auto"></audio>
+        <audio id="bell-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-boxing-ring-bell-1566.mp3" preload="auto"></audio>
+    </div>
+
+    <div id="end-screen" style="display: none;">
+        <div class="screen-content">
+            <h1>DESK DOWN!</h1>
+            <div id="final-stats">
+                <p>Knocked Desk out in <span id="final-time">0.00</span> seconds!</p>
+                <p>Punches landed: <span id="final-punches">0</span></p>
+                <p>Peak Combo: <span id="final-combo">0x</span></p>
+                <p>Difficulty: <span id="final-difficulty">Medium</span></p>
+                <p id="performance-comment">Nice jab!</p>
+            </div>
+            
+            <input type="text" id="name-input" placeholder="Enter your name" maxlength="20">
+            
+            <div class="button-group">
+                <button id="save-score-btn" class="btn">Save Score</button>
+                <button id="restart-btn" class="btn btn-secondary">Fight Again</button>
+                <button id="menu-btn" class="btn btn-secondary">Main Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="leaderboard-screen" style="display: none;">
+        <div class="screen-content">
+            <h1>🥊 DESK'S CHAMPS 🥊</h1>
+            <div id="leaderboard">
+                <div id="no-scores-message">No scores yet. Be the first!</div>
+            </div>
+            <button id="back-btn" class="btn">Back to Menu</button>
+        </div>
+    </div>
+
+    <script>
+        // Game elements
+        const startScreen = document.getElementById('start-screen');
+        const gameContainer = document.getElementById('game-container');
+        const endScreen = document.getElementById('end-screen');
+        const leaderboardScreen = document.getElementById('leaderboard-screen');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const menuBtn = document.getElementById('menu-btn');
+        const saveScoreBtn = document.getElementById('save-score-btn');
+        const viewLeaderboardBtn = document.getElementById('view-leaderboard-btn');
+        const backBtn = document.getElementById('back-btn');
+        const faceContainer = document.getElementById('face-container');
+        const face = document.getElementById('face');
+        const timerElement = document.getElementById('timer');
+        const scoreElement = document.getElementById('score');
+        const comboElement = document.getElementById('combo');
+        const comboText = document.getElementById('combo-text');
+        const healthProgress = document.getElementById('health-progress');
+        const punchSound = document.getElementById('punch-sound');
+        const comboSound = document.getElementById('combo-sound');
+        const bellSound = document.getElementById('bell-sound');
+        const punchEffect = document.querySelector('.punch-effect');
+        const hitFlash = document.querySelector('.hit-flash');
+        const finalTime = document.getElementById('final-time');
+        const finalPunches = document.getElementById('final-punches');
+        const finalCombo = document.getElementById('final-combo');
+        const finalDifficulty = document.getElementById('final-difficulty');
+        const performanceComment = document.getElementById('performance-comment');
+        const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+        const nameInput = document.getElementById('name-input');
+        const leaderboard = document.getElementById('leaderboard');
+        const noScoresMessage = document.getElementById('no-scores-message');
+
+        // Game variables
+        let gameActive = false;
+        let startTime;
+        let timerInterval;
+        let punches = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let health = 100;
+        let difficulty = 'medium';
+        let lastPunchTime = 0;
+        let comboTimeout;
+        let bruises = [];
+        let currentScore = {};
+        const punchSounds = [
+            'https://assets.mixkit.co/sfx/preview/mixkit-boxing-punch-2051.mp3',
+            'https://assets.mixkit.co/sfx/preview/mixkit-hard-punch-2055.mp3',
+            'https://assets.mixkit.co/sfx/preview/mixkit-martial-arts-fast-punch-2046.mp3'
+        ];
+        const bruiseImages = [
+            'bruise1.png',
+            'bruise2.png',
+            'bruise3.png',
+            'bruise4.png'
+        ];
+
+        // Difficulty settings
+        const difficultySettings = {
+            easy: { 
+                healthDecrement: 12, 
+                comboWindow: 1500,
+                bruiseMax: 3,
+                displayName: 'Rookie'
+            },
+            medium: { 
+                healthDecrement: 8, 
+                comboWindow: 1000,
+                bruiseMax: 5,
+                displayName: 'Contender'
+            },
+            hard: { 
+                healthDecrement: 6, 
+                comboWindow: 800,
+                bruiseMax: 7,
+                displayName: 'Champ'
+            }
+        };
+
+        // Leaderboard
+        let leaderboardData = JSON.parse(localStorage.getItem('desksBoxingLeaderboard')) || [];
+        updateLeaderboardDisplay();
+
+        // Event listeners
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        menuBtn.addEventListener('click', showMainMenu);
+        saveScoreBtn.addEventListener('click', saveScore);
+        viewLeaderboardBtn.addEventListener('click', showLeaderboard);
+        backBtn.addEventListener('click', showMainMenu);
+        faceContainer.addEventListener('click', punch);
+        
+        difficultyButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                setDifficulty(this.dataset.difficulty);
+            });
+        });
+
+        // Set difficulty
+        function setDifficulty(diff) {
+            difficulty = diff;
+            difficultyButtons.forEach(btn => {
+                btn.classList.remove('selected-difficulty');
+                if (btn.dataset.difficulty === diff) {
+                    btn.classList.add('selected-difficulty');
+                }
+            });
+        }
+
+        // Start game
+        function startGame() {
+            startScreen.style.display = 'none';
+            endScreen.style.display = 'none';
+            leaderboardScreen.style.display = 'none';
+            gameContainer.style.display = 'block';
+            
+            gameActive = true;
+            punches = 0;
+            combo = 0;
+            maxCombo = 0;
+            health = 100;
+            bruises.forEach(b => b.remove());
+            bruises = [];
+            
+            scoreElement.textContent = '0';
+            comboElement.textContent = '0x';
+            healthProgress.style.width = '100%';
+            face.style.filter = 'none';
+            
+            bellSound.currentTime = 0;
+            bellSound.play();
+            
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 10);
+        }
+
+        // Update timer
+        function updateTimer() {
+            const currentTime = Date.now();
+            const elapsedTime = (currentTime - startTime) / 1000;
+            timerElement.textContent = elapsedTime.toFixed(2) + 's';
+        }
+
+        // Punch action
+        function punch(e) {
+            if (!gameActive) return;
+            
+            punchSound.src = punchSounds[Math.floor(Math.random() * punchSounds.length)];
+            punchSound.currentTime = 0;
+            punchSound.play();
+            
+            punches++;
+            scoreElement.textContent = punches;
+            
+            const now = Date.now();
+            if (now - lastPunchTime < difficultySettings[difficulty].comboWindow) {
+                combo++;
+                maxCombo = Math.max(maxCombo, combo);
+                comboElement.textContent = combo + 'x';
+                if (combo % 5 === 0) {
+                    showComboText();
+                    comboSound.currentTime = 0;
+                    comboSound.play();
+                }
+            } else {
+                combo = 1;
+                comboElement.textContent = '1x';
+            }
+            lastPunchTime = now;
+            
+            clearTimeout(comboTimeout);
+            comboTimeout = setTimeout(() => {
+                combo = 0;
+                comboElement.textContent = '0x';
+            }, difficultySettings[difficulty].comboWindow);
+            
+            const rect = faceContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            addBruise(x, y);
+            animatePunch(x, y);
+            
+            const damage = difficultySettings[difficulty].healthDecrement * (1 + combo * 0.15);
+            updateHealth(damage);
+            
+            if (health <= 0) {
+                endGame();
+            }
+        }
+
+        // Add realistic bruise
+        function addBruise(x, y) {
+            if (bruises.length >= difficultySettings[difficulty].bruiseMax) return;
+            
+            const bruise = document.createElement('img');
+            bruise.className = 'bruise';
+            bruise.src = bruiseImages[Math.floor(Math.random() * bruiseImages.length)];
+            const size = 80 + Math.random() * 40;
+            bruise.style.width = `${size}px`;
+            bruise.style.height = `${size}px`;
+            bruise.style.left = `${x - size/2}px`;
+            bruise.style.top = `${y - size/2}px`;
+            bruise.style.transform = `rotate(${Math.random() * 360}deg) scale(${0.8 + Math.random() * 0.4})`;
+            
+            faceContainer.appendChild(bruise);
+            bruises.push(bruise);
+            
+            setTimeout(() => {
+                bruise.style.opacity = '0.85';
+            }, 10);
+        }
+
+        // Update health
+        function updateHealth(damage) {
+            health = Math.max(0, health - damage);
+            healthProgress.style.width = health + '%';
+            face.style.filter = `grayscale(${(100 - health)/2}%) blur(${(100 - health)/50}px)`;
+        }
+
+        // Animate punch
+        function animatePunch(x, y) {
+            punchEffect.style.left = `${x - 60}px`;
+            punchEffect.style.top = `${y - 60}px`;
+            punchEffect.style.opacity = '1';
+            punchEffect.style.animation = 'punch 0.4s forwards';
+            
+            hitFlash.style.opacity = '0.8';
+            setTimeout(() => {
+                hitFlash.style.opacity = '0';
+            }, 100);
+        }
+
+        // Show combo text
+        function showComboText() {
+            comboText.textContent = `${combo}X COMBO!`;
+            comboText.classList.add('combo-active');
+            setTimeout(() => {
+                comboText.classList.remove('combo-active');
+            }, 1200);
+        }
+
+        // End game
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            faceContainer.classList.remove('ring-glow');
+            
+            const endTime = Date.now();
+            const totalTime = (endTime - startTime) / 1000;
+            
+            currentScore = {
+                time: totalTime,
+                punches: punches,
+                combo: maxCombo,
+                difficulty: difficulty,
+                difficultyName: difficultySettings[difficulty].displayName,
+                date: new Date().toLocaleDateString()
+            };
+            
+            finalTime.textContent = totalTime.toFixed(2);
+            finalPunches.textContent = punches;
+            finalCombo.textContent = maxCombo + 'x';
+            finalDifficulty.textContent = difficultySettings[difficulty].displayName;
+            
+            if (totalTime < 6) {
+                performanceComment.textContent = "🥇 DESK DESTROYER! 🥇";
+            } else if (totalTime < 12) {
+                performanceComment.textContent = "🥊 PUNCH MASTER! 🥊";
+            } else if (totalTime < 18) {
+                performanceComment.textContent = "👊 SOLID HITTER! 👊";
+            } else {
+                performanceComment.textContent = "💪 KEEP SWINGING! 💪";
+            }
+            
+            gameContainer.style.display = 'none';
+            endScreen.style.display = 'flex';
+            nameInput.value = '';
+            nameInput.focus();
+            
+            bellSound.currentTime = 0;
+            bellSound.play();
+        }
+
+        // Save score
+        function saveScore() {
+            const name = nameInput.value.trim() || 'Anonymous';
+            currentScore.name = name.substring(0, 20);
+            
+            leaderboardData.push(currentScore);
+            leaderboardData.sort((a, b) => a.time - b.time);
+            if (leaderboardData.length > 50) {
+                leaderboardData = leaderboardData.slice(0, 50);
+            }
+            
+            localStorage.setItem('desksBoxingLeaderboard', JSON.stringify(leaderboardData));
+            updateLeaderboardDisplay();
+            showLeaderboard();
+        }
+
+        // Update leaderboard display
+        function updateLeaderboardDisplay() {
+            leaderboard.innerHTML = '';
+            if (leaderboardData.length === 0) {
+                noScoresMessage.style.display = 'block';
+                return;
+            }
+            
+            noScoresMessage.style.display = 'none';
+            leaderboardData.forEach((entry, index) => {
+                const entryElement = document.createElement('div');
+                entryElement.className = 'leaderboard-entry';
+                entryElement.innerHTML = `
+                    <div class="leaderboard-rank">${index + 1}.</div>
+                    <div class="leaderboard-name">${entry.name}</div>
+                    <div class="leaderboard-time">${entry.time.toFixed(2)}s</div>
+                    <div class="leaderboard-difficulty">${entry.difficultyName}</div>
+                `;
+                leaderboard.appendChild(entryElement);
+            });
+        }
+
+        // Show main menu
+        function showMainMenu() {
+            endScreen.style.display = 'none';
+            leaderboardScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+        }
+
+        // Show leaderboard
+        function showLeaderboard() {
+            endScreen.style.display = 'none';
+            startScreen.style.display = 'none';
+            gameContainer.style.display = 'none';
+            leaderboardScreen.style.display = 'flex';
+            updateLeaderboardDisplay();
+        }
+
+        // Initialize
+        setDifficulty('medium');
+    </script>
+</body>
+</html>
